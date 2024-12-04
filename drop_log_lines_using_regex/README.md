@@ -4,7 +4,8 @@
 - If we want to drop some log statements that can come from `n` number of services.
 
 ### Solution:
-- Use `filter` processor on otel-collector and specify all conditions using regex 
+- Use `filter` processor of otel-collector
+- Identify correct log statements using regex on all service name and body.
 
 ### To run
 
