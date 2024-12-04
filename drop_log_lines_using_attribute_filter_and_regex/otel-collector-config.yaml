@@ -1,0 +1,26 @@
+receivers:
+  otlp:
+    protocols:
+      http:
+
+processors:
+  batch:
+  filter/drop_log_lines:
+    error_mode: ignore
+    logs:
+      log_record:
+        - 'resource.attributes["service.name"] == "service1" and IsMatch(body, "(?s).*test log1 message.*(?s)")' # will not be dropped as service is not matching
+        - 'resource.attributes["service.name"] == "service2" and IsMatch(body, "(?s).*test log1 message.*(?s)")' # will be dropped as service and body both are matching
+        - 'resource.attributes["service.name"] == "service3" and IsMatch(body, "(?s).*test log2 message.*(?s)")' # will not be dropped as service is not matching
+        - 'resource.attributes["service.name"] == "service2" and IsMatch(body, "(?s).*test log3 message.*(?s)")' # will not be dropped as body is not matching
+
+exporters:
+  debug:
+    verbosity: detailed
+
+service:
+  pipelines:
+    logs:
+      receivers: [otlp]
+      processors: [batch, filter/drop_log_lines]
+      exporters: [debug]

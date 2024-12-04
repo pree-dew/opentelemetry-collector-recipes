@@ -1,0 +1,46 @@
+receivers:
+  otlp:
+    protocols:
+      http:
+
+processors:
+  batch:
+  transform/identify_services_to_match_for_drop:
+    error_mode: ignore
+    log_statements:
+      - context: log
+        conditions:
+          - resource.attributes["service.name"] == "service1"
+          - resource.attributes["service.name"] == "service2"
+          - resource.attributes["service.name"] == "service3"
+          - resource.attributes["service.name"] == "service4"
+        statements:
+          - set(attributes["in_drop_list"], "true")
+
+  filter/drop_log_lines:
+    error_mode: ignore
+    logs:
+      log_record:
+        - 'attributes["in_drop_list"] == "true" and IsMatch(body, "(?s).*test log1 message.*(?s)")' # will be dropped as service and body both are matching
+        - 'attributes["in_drop_list"] == "true" and IsMatch(body, "(?s).*test log2 message.*(?s)")' # will not be dropped as service is not matching
+        - 'attributes["in_drop_list"] == "true" and IsMatch(body, "(?s).*test log3 message.*(?s)")' # will not be dropped as body is not matching
+
+  transform/remove_in_drop_list_attr:
+   error_mode: ignore
+   log_statements:
+    - context: log
+      conditions:
+        - attributes["in_drop_list"] == "true"
+      statements:
+        - delete_key(attributes, "in_drop_list")
+
+exporters:
+  debug:
+    verbosity: detailed
+
+service:
+  pipelines:
+    logs:
+      receivers: [otlp]
+      processors: [batch, transform/identify_services_to_match_for_drop, filter/drop_log_lines, transform/remove_in_drop_list_attr]
+      exporters: [debug]
