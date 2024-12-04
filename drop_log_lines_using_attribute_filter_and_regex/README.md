@@ -12,3 +12,15 @@
 
 ```
 cp otel-collector-config.yaml /tmp/. && docker-compose up
+```
+
+```
+cd curl_otel_remotewrite
+```
+
+```
+chmod +x curl_command.sh
+```
+
+```
+./curl_command.sh
