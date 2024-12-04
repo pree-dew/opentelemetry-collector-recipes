@@ -1,2 +1,2 @@
 # opentelemetry-collector-recipes
-Possibilities unlicked by opentelemetry collector
+Possibilities unlocked by opentelemetry collector processors
