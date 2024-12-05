@@ -4,8 +4,8 @@
 - Rename metric labels for certain metric names.
 
 ### Solution:
-- Use `filter` processor of otel-collector
-- Identify correct log statements using regex on all service name and body.
+- Use `metricstransform` processor of otel-collector
+- Specify the rule for label update
 
 ### To run
 
