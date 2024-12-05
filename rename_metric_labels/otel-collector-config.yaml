@@ -1,0 +1,29 @@
+receivers:
+  otlp:
+    protocols:
+      http:
+
+processors:
+  batch:
+  metricstransform:
+    transforms:
+      - include: calls_total
+        action: update
+        operations:
+          - action: update_label
+            label: http_request_method
+            new_label: http_method
+          - action: update_label
+            label: http_response_status_code
+            new_label: http_status_code
+
+exporters:
+  debug:
+    verbosity: detailed
+
+service:
+  pipelines:
+    metrics:
+      receivers: [otlp]
+      processors: [batch, metricstransform]
+      exporters: [debug]
