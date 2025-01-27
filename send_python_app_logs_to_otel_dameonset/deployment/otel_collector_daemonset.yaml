@@ -1,0 +1,67 @@
+# otel-collector-deployment.yaml (Private Application)
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: opentelemetry-collector-daemon
+spec:
+  selector:
+    matchLabels:
+      app: opentelemetry-collector-daemon
+  template:
+    metadata:
+      labels:
+        app: opentelemetry-collector-daemon
+    spec:
+      serviceAccountName: collector
+      initContainers:
+      - name: init-dirs
+        image: busybox
+        command: ['sh', '-c', 'mkdir -p /host/var/lib/otelcol/file_storage/{receiver,output} && chmod -R 777 /host/var/lib/otelcol/file_storage']
+        volumeMounts:
+        - name: host-fs
+          mountPath: /host
+      containers:
+      - name: opentelemetry-collector-daemon
+        image: otel/opentelemetry-collector-contrib:0.103.0
+        command:
+          - "/otelcol-contrib"
+          - "--config=/etc/otel-collector-config.yaml"
+        env:
+        - name: KUBERNETES_NODE_NAME
+          valueFrom:
+           fieldRef:
+             fieldPath: spec.nodeName
+        ports:
+        - containerPort: 4318
+        - containerPort: 4317
+        - containerPort: 2255
+        volumeMounts:
+        - name: config
+          mountPath: /etc/otel-collector-config.yaml
+          subPath: otel-collector-config.yaml
+          readOnly: true
+        - name: varlog  # Changed from varlogpods
+          mountPath: /var/log  # Changed to include all logs
+          readOnly: true
+        - name: varlibdockercontainers
+          mountPath: /var/lib/docker/containers
+          readOnly: true
+        - name: storage-path
+          mountPath: /var/lib/otelcol
+      volumes:
+      - name: config
+        configMap:
+          name: opentelemetry-collector-daemon-config
+      - name: varlog  # Changed from varlogpods
+        hostPath:
+          path: /var/log  # Changed to include all logs
+      - name: varlibdockercontainers
+        hostPath:
+          path: /var/lib/docker/containers
+      - name: storage-path
+        hostPath:
+          path: /var/lib/otelcol
+          type: DirectoryOrCreate
+      - name: host-fs
+        hostPath:
+         path: /

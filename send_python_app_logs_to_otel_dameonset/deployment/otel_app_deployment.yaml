@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otel-app
+  labels:
+    app: otel-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: otel-app
+  template:
+    metadata:
+      labels:
+        app: otel-app
+        logging: enabled
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8000"
+    spec:
+      containers:
+      - name: otel-app
+        image: preedew/otel-python-logs-app:latest
+        ports:
+        - containerPort: 8000
+          name: http
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 500m
+            memory: 256Mi
+        env:
+        - name: PYTHONUNBUFFERED
+          value: "1"

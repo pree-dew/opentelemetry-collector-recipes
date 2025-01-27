@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: opentelemetry-collector-daemon
+spec:
+  type: ClusterIP
+  selector:
+    app: opentelemetry-collector-daemon
+  ports:
+  - name: http
+    port: 4318
+    targetPort: 4318
+  - name: grpc
+    port: 4317
+    targetPort: 4317
+  - name: tcp
+    port: 2255
+    targetPort: 2255
+

@@ -1,0 +1,99 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: opentelemetry-collector-daemon-config
+data:
+  otel-collector-config.yaml: |
+    receivers:
+      filelog:
+        include:
+          - /var/log/pods/default*/*/*.log
+        exclude:
+          # Exclude logs from all containers named otel-collector
+          - /var/log/pods/*/opentelemetry-collector-daemon/*.log
+        start_at: end
+        include_file_path: true
+        include_file_name: false
+        storage: file_storage/filelogreceiver
+        operators:
+         - type: regex_parser
+           id: extract_metadata_from_filepath
+           regex: '^.*\/(?P<namespace>[^_]+)_(?P<pod_name>[^_]+)_(?P<uid>[a-f0-9\-]{36})\/(?P<container_name>[^\._]+)\/(?P<restart_count>\d+)\.log$'
+           parse_from: attributes["log.file.path"]
+           cache:
+             size: 128  # default maximum amount of Pods per Node is 110
+         - type: move
+           from: attributes.container_name
+           to: resource["k8s.container.name"]
+         - type: move
+           from: attributes.namespace
+           to: resource["k8s.namespace.name"]
+         - type: move
+           from: attributes.pod_name
+           to: resource["k8s.pod.name"]
+         - type: move
+           from: attributes.restart_count
+           to: resource["k8s.container.restart_count"]
+         - type: move
+           from: attributes.uid
+           to: resource["k8s.pod.uid"]
+
+    extensions:
+      file_storage/filelogreceiver:
+        directory: /var/lib/otelcol/file_storage/receiver
+      file_storage/otlpoutput:
+        directory: /var/lib/otelcol/file_storage/output
+
+    processors:
+      batch:
+      k8sattributes:
+        auth_type: "serviceAccount"
+        passthrough: false
+        filter:
+          node_from_env_var: KUBERNETES_NODE_NAME
+        extract:
+          metadata:
+            - k8s.pod.name
+            - k8s.pod.uid
+            - k8s.deployment.name
+            - k8s.namespace.name
+            - k8s.node.name
+            - k8s.pod.start_time
+            - k8s.cluster.uid
+          labels:
+            - tag_name: logging
+              key: logging
+              from: pod
+        # Pod association using resource attributes and connection
+        pod_association:
+          - sources:
+            - from: resource_attribute
+              name: k8s.pod.name
+            - from: resource_attribute
+              name: k8s.namespace.name
+      filter/logging_services:
+        error_mode: ignore
+        logs:
+          log_record:
+            - resource.attributes["logging"] == nil 
+            - resource.attributes["k8s.namespace.name"] != "default"
+    exporters:
+      debug:
+        verbosity: detailed
+          #otlphttp:
+          #  logs_endpoint: "http://localhost:8429/opentelemetry/api/v1/push"
+          #  sending_queue:
+          #    enabled: true
+          #    storage: file_storage/otlpoutput
+          #    num_consumers: 10 # Number of consumers that dequeue batches from the queue
+          #    queue_size: 1000 # Maximum number of batches kept in memory before dropping
+          #    blocking: false # if true blocks until queue has space for the request drop requests if queue is full
+
+    service:
+      extensions: [file_storage/filelogreceiver, file_storage/otlpoutput]
+      pipelines:
+        logs:
+          receivers: [filelog]
+          processors: [k8sattributes, filter/logging_services, batch] 
+          exporters: [debug]
+
