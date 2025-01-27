@@ -1,32 +1,9 @@
-from opentelemetry.sdk.resources import Resource
-from opentelemetry.sdk._logs import LoggerProvider, LoggingHandler
-from opentelemetry.sdk._logs.export import BatchLogRecordProcessor, SimpleLogRecordProcessor, ConsoleLogExporter
-from opentelemetry.instrumentation.logging import LoggingInstrumentor
-from opentelemetry._logs import set_logger_provider
 import logging
 import time
 
-resource = Resource.create({
-    "service.name": "example-service",
-    "service.version": "0.1.0"
-})
 
-logger_provider = LoggerProvider(resource=resource)
-console_exporter = ConsoleLogExporter()
-logger_provider.add_log_record_processor(SimpleLogRecordProcessor(console_exporter))
-set_logger_provider(logger_provider)
-
-handler = LoggingHandler(level=logging.NOTSET, logger_provider=logger_provider)
-
-logging.basicConfig(
-        level=logging.INFO,
-        handlers=[handler]
-    )
-
-# Attach OTLP handler to root logger
-logging.getLogger().addHandler(handler)
-
-logger = logging.getLogger("myapp")
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 def process_task(task_id):
     logger.info(
