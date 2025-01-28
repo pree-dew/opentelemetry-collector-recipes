@@ -22,7 +22,7 @@ spec:
           mountPath: /host
       containers:
       - name: opentelemetry-collector-daemon
-        image: otel/opentelemetry-collector-contrib:0.103.0
+        image: otel/opentelemetry-collector-contrib:latest
         command:
           - "/otelcol-contrib"
           - "--config=/etc/otel-collector-config.yaml"
