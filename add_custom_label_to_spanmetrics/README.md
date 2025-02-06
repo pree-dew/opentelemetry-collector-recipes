@@ -43,6 +43,6 @@ Browse exported telemetry:
 
 
 **Baggage attribute in metrics generated from span**
+![Screenshot 2025-02-06 at 5 52 29 PM](https://github.com/user-attachments/assets/330e336e-d10a-4a25-9814-8e74ab3e2d77)
 
-![Screenshot 2025-02-05 at 2 18 20 AM](https://github.com/user-attachments/assets/10a252a1-ca61-4275-bccd-c9a415e15394)
 
