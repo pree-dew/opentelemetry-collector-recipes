@@ -9,6 +9,10 @@ processors:
 
 connectors:
   spanmetrics:
+    namespace: "http_custom"
+    histogram:
+      # to disable histogram
+      disable: true
     dimensions:
       - name: baggage.user.type
         default: "unknown"
